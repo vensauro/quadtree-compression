@@ -77,7 +77,7 @@ void nivel(TQuadtree **child, tPonto inicio, int h, int w, int altura_nivel)
 	for (int i = inicio.y; i < inicio.y + h; i++)
 		for (int j = inicio.x; j < inicio.x + w; j++)
 		{
-			soma += image[i + largura * j];
+			soma += image[i * iWidth + j];
 		}
 
 	int media = soma / (largura * altura);
@@ -91,13 +91,12 @@ void nivel(TQuadtree **child, tPonto inicio, int h, int w, int altura_nivel)
 		return;
 
 	tPonto envia_nivel = inicio;
-
 	nivel(&(*child)->childs[0], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
 
-	envia_nivel.x = largura / 2;
+	envia_nivel.x += largura / 2;
 	nivel(&(*child)->childs[1], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
 
-	envia_nivel.y = altura / 2;
+	envia_nivel.y += altura / 2;
 	nivel(&(*child)->childs[2], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
 
 	envia_nivel.x = inicio.x;
@@ -110,10 +109,10 @@ void desenhaArvore()
 {
 	printf("Aqui eu vou desenhar a arvore\n");
 	tPonto final;
-	final.x = 128;
+	final.x = 128 * 2;
 	final.y = 128;
 	tPonto inicio;
-	inicio.x = 0;
+	inicio.x = 128;
 	inicio.y = 0;
 	// desenhaQuadrante(inicio, final, 122);
 	inNivel(*root, level);
@@ -127,9 +126,9 @@ void inNivel(TQuadtree node, int lvl)
 		tPonto final;
 		final.x = node.key_value->pBase.x + node.key_value->w;
 		final.y = node.key_value->pBase.y + node.key_value->h;
-		printf("i.x: %d  i.y: %d\t", node.key_value->pBase.x, node.key_value->pBase.y);
-		printf("f.x: %d  f.y: %d\n", final.x, final.y);
-		printf("cor: %d\n", node.key_value->cor);
+		// printf("i.x: %d  i.y: %d\t", node.key_value->pBase.x, node.key_value->pBase.y);
+		// printf("f.x: %d  f.y: %d\n", final.x, final.y);
+		// printf("cor: %d\n", node.key_value->cor);
 		desenhaQuadrante(node.key_value->pBase, final, node.key_value->cor);
 	}
 	if (node.childs[0] != NULL)
