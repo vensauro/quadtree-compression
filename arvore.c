@@ -51,7 +51,7 @@ void montaArvore()
 	inicio.x = 0;
 	inicio.y = 0;
 
-	nivel(&root, inicio, iHeight, iWidth, 0);
+	nivel(&root, inicio, iHeight, iWidth, 0, -1);
 
 	printf("\nmontado\n");
 	// in(*root);
