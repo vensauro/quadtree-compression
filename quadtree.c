@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "winGL.h"
 #include "quadtree.h"
+
+extern int iHeight, iWidth;
+extern unsigned char *image;
 
 TQuadtree *new (tPonto pBase, int h, int w, int cor, int altura_nivel)
 {
@@ -26,6 +30,43 @@ TQuadtree *new (tPonto pBase, int h, int w, int cor, int altura_nivel)
 	return node;
 }
 
+void nivel(TQuadtree **child, tPonto inicio, int h, int w, int altura_nivel)
+{
+	int largura = w;
+	// == 1 ? w : inicio.x + w;
+	int altura = h;
+	//  == 1 ? h : inicio.y + h;
+	int soma = 0;
+
+	for (int i = inicio.y; i < inicio.y + h; i++)
+		for (int j = inicio.x; j < inicio.x + w; j++)
+		{
+			soma += image[i * iWidth + j];
+		}
+
+	int media = soma / (largura * altura);
+	// printf("Media: %d", largura);
+
+	*child = new (inicio, altura, largura, media, altura_nivel);
+
+	if (largura <= 1)
+		return;
+	else if (altura <= 1)
+		return;
+
+	tPonto envia_nivel = inicio;
+	nivel(&(*child)->childs[0], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
+
+	envia_nivel.x += largura / 2;
+	nivel(&(*child)->childs[1], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
+
+	envia_nivel.y += altura / 2;
+	nivel(&(*child)->childs[2], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
+
+	envia_nivel.x = inicio.x;
+	nivel(&(*child)->childs[3], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
+}
+
 void in(TQuadtree node)
 {
 	printf("Nó de nivel %d com valor %d\n", node.key_value->nivel, node.key_value->cor);
@@ -40,4 +81,56 @@ void in(TQuadtree node)
 
 	if (node.childs[3] != NULL)
 		in(*node.childs[3]);
+}
+
+void inNivel(TQuadtree node, int lvl)
+{
+	// printf("Nó de nivel %d com valor %d\n", node.key_value->nivel, node.key_value->cor);
+	if (node.key_value->nivel == lvl)
+	{
+		tPonto final;
+		final.x = node.key_value->pBase.x + node.key_value->w;
+		final.y = node.key_value->pBase.y + node.key_value->h;
+		desenhaQuadrante(node.key_value->pBase, final, node.key_value->cor);
+
+		// printf("i.x: %d  i.y: %d\t", node.key_value->pBase.x, node.key_value->pBase.y);
+		// printf("f.x: %d  f.y: %d\n", final.x, final.y);
+		// printf("cor: %d\n", node.key_value->cor);
+
+		return;
+	}
+	if (node.childs[0] != NULL)
+		inNivel(*node.childs[0], lvl);
+
+	if (node.childs[1] != NULL)
+		inNivel(*node.childs[1], lvl);
+
+	if (node.childs[2] != NULL)
+		inNivel(*node.childs[2], lvl);
+
+	if (node.childs[3] != NULL)
+		inNivel(*node.childs[3], lvl);
+}
+
+void parseError(TQuadtree **node, int err)
+{
+	// for (int i = inicio.y; i < inicio.y + h; i++)
+	// 	for (int j = inicio.x; j < inicio.x + w; j++)
+	// 	{
+	// 		soma += image[i * iWidth + j];
+	// 	}
+
+	// int media = soma / (largura * altura)
+
+	if ((*node)->childs[0] != NULL)
+		parseError(&(*node)->childs[0], err);
+
+	if ((*node)->childs[1] != NULL)
+		parseError(&(*node)->childs[1], err);
+
+	if ((*node)->childs[2] != NULL)
+		parseError(&(*node)->childs[2], err);
+
+	if ((*node)->childs[3] != NULL)
+		parseError(&(*node)->childs[3], err);
 }
