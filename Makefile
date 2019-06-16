@@ -6,7 +6,7 @@
 
 all:	arvore
 
-arvore:  arvore.o winGL.o 
+arvore:  arvore.o winGL.o quadtree.o
 	g++ -o $@ $^ -L./external/SOIL/lib -lglut -lGL -lGLU -lsoil
 
 clean:
