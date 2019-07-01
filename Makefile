@@ -2,7 +2,7 @@
 	gcc -c $*.c -I./external/SOIL/inc
 
 .cpp.o:	$*.h
-	g++	-c $*.cpp -I./externals/SOIL/inc
+	g++	-c $*.cpp -I./external/SOIL/inc
 
 all:	arvore
 

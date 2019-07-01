@@ -19,7 +19,10 @@ bool desenha = false;
 /* Minhas referencias: Ivens */
 #include "quadtree.h"
 TQuadtree *root = NULL;
-int level = 0;
+int level = 0, max_level = 0;
+bool isErro = true;
+
+int max_erro = 100;
 
 // ***********************************************
 // ******                                   ******
@@ -27,15 +30,18 @@ int level = 0;
 
 void desenhaArvore()
 {
-	printf("Aqui eu vou desenhar a arvore\n");
-	// tPonto final;
-	// final.x = 128 * 2;
-	// final.y = 128;
-	// tPonto inicio;
-	// inicio.x = 128;
-	// inicio.y = 0;
-	// desenhaQuadrante(inicio, final, 122);
-	inNivel(*root, level);
+	printf("Arvore desenhada");
+	if (isErro)
+	{
+		printf("\tquantidade de erro: %f", level * 0.05);
+	}
+	else
+	{
+		printf("\tquantidade de nivel: %d", level);
+	}
+	printf("\n");
+
+	inNivel(*root, level, isErro);
 }
 
 /// ***********************************************************************
@@ -44,14 +50,13 @@ void desenhaArvore()
 
 void montaArvore()
 {
-
 	// printf("Aqui eu vou montar a arvore\n");
 
 	tPonto inicio;
 	inicio.x = 0;
 	inicio.y = 0;
 
-	nivel(&root, inicio, iHeight, iWidth, 0, -1);
+	monta(&root, inicio, iHeight, iWidth, 0);
 
 	printf("\nmontado\n");
 	// in(*root);
@@ -77,11 +82,35 @@ void teclado(unsigned char key, int x, int y)
 	case 'I':
 		desenha = !desenha;
 		break;
-	case '=':
-		level++;
+	case 'j':
+	case 'J':
+		if (isErro == true)
+		{
+			printf("Visualização por nivel\n");
+			printf("Tente diminuir o nivel com 'k'\n");
+			level = max_level;
+			isErro = false;
+		}
+		else
+		{
+			printf("Visualização por erro\n");
+			printf("Tente aumentar o erro com 'l'\n");
+			level = 0;
+			isErro = true;
+		}
 		break;
-	case '-':
-		level--;
+	case 'k':
+	case 'K':
+		level = level == 0 ? 0 : level - 1;
+
+		break;
+	case 'l':
+	case 'L':
+		if (isErro)
+			level = level * 0.05 < max_erro ? level + 1 : max_erro;
+		else
+			level = level < max_level ? level + 1 : level;
+
 		break;
 	}
 	glutPostRedisplay();

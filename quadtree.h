@@ -11,14 +11,12 @@ typedef struct quadtree
 
 } TQuadtree;
 
-TQuadtree *new (tPonto pBase, int h, int w, int cor, int altura_nivel);
+TQuadtree *new (tPonto pBase, int h, int w, int cor, int altura_nivel, float erro);
 
-void nivel(TQuadtree **child, tPonto inicio, int h, int w, int altura_nivel, int cor_pai);
+void monta(TQuadtree **child, tPonto inicio, int h, int w, int altura_nivel);
 
 void in(TQuadtree node);
 
-void inNivel(TQuadtree node, int lvl);
-
-void parseError(TQuadtree **node, int err);
+void inNivel(TQuadtree node, int lvl, bool isErro);
 
 #endif // __QuadTree__

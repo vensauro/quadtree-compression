@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "winGL.h"
 #include "quadtree.h"
 
-extern int iHeight, iWidth;
+extern int iHeight, iWidth, max_level, max_erro;
 extern unsigned char *image;
 
-TQuadtree *new (tPonto pBase, int h, int w, int cor, int altura_nivel)
+TQuadtree *new (tPonto pBase, int h, int w, int cor, int altura_nivel, float erro)
 {
 	TQuadtree *node = malloc(sizeof(TQuadtree));
 	if (node == NULL)
@@ -20,6 +21,7 @@ TQuadtree *new (tPonto pBase, int h, int w, int cor, int altura_nivel)
 	key->cor = cor;
 	key->erro = 0.0;
 	key->nivel = altura_nivel;
+	key->erro = erro;
 
 	node->key_value = key;
 	for (int i = 0; i < 4; i++)
@@ -30,18 +32,17 @@ TQuadtree *new (tPonto pBase, int h, int w, int cor, int altura_nivel)
 	return node;
 }
 
-void nivel(TQuadtree **child, tPonto inicio, int h, int w, int altura_nivel, int cor_pai)
+void monta(TQuadtree **child, tPonto inicio, int altura, int largura, int altura_nivel)
 {
-	int largura = w;
-	// == 1 ? w : inicio.x + w;
-	int altura = h;
-	//  == 1 ? h : inicio.y + h;
+	if (altura_nivel > max_level)
+		max_level = altura_nivel;
+
 	int soma = 0;
-	float pixels[w * h];
+	float pixels[largura * altura];
 	int iterate = 0;
 
-	for (int i = inicio.y; i < inicio.y + h; i++)
-		for (int j = inicio.x; j < inicio.x + w; j++)
+	for (int i = inicio.y; i < inicio.y + altura; i++)
+		for (int j = inicio.x; j < inicio.x + largura; j++)
 		{
 			int pixel = image[i * iWidth + j];
 			soma += pixel;
@@ -50,37 +51,40 @@ void nivel(TQuadtree **child, tPonto inicio, int h, int w, int altura_nivel, int
 
 	float media = soma / (largura * altura);
 	// printf("Media: %d", largura);
-	float greater = 0;
 
+	float greater = 0;
 	for (int i = 0; i < largura * altura; i++)
 	{
 		float abs = media - pixels[i];
 		abs = abs >= 0 ? abs : -abs;
 		abs /= pixels[i];
-		// abs *= 100;
 		if (abs > greater)
 			greater = abs;
 	}
+	if (greater > max_erro)
+		greater = max_erro;
 
-	*child = new (inicio, altura, largura, media, altura_nivel);
-	(*child)->key_value->erro = greater;
+	*child = new (inicio, altura, largura, media, altura_nivel, greater);
 
-	if (largura <= 1)
+	float l = largura;
+	float a = altura;
+
+	if (l <= 1)
 		return;
-	else if (altura <= 1)
+	else if (a <= 1)
 		return;
 
 	tPonto envia_nivel = inicio;
-	nivel(&(*child)->childs[0], envia_nivel, altura / 2, largura / 2, altura_nivel + 1, media);
+	monta(&(*child)->childs[0], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
 
 	envia_nivel.x += largura / 2;
-	nivel(&(*child)->childs[1], envia_nivel, altura / 2, largura / 2, altura_nivel + 1, media);
+	monta(&(*child)->childs[1], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
 
 	envia_nivel.y += altura / 2;
-	nivel(&(*child)->childs[2], envia_nivel, altura / 2, largura / 2, altura_nivel + 1, media);
+	monta(&(*child)->childs[2], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
 
 	envia_nivel.x = inicio.x;
-	nivel(&(*child)->childs[3], envia_nivel, altura / 2, largura / 2, altura_nivel + 1, media);
+	monta(&(*child)->childs[3], envia_nivel, altura / 2, largura / 2, altura_nivel + 1);
 }
 
 void in(TQuadtree node)
@@ -99,10 +103,11 @@ void in(TQuadtree node)
 		in(*node.childs[3]);
 }
 
-void inNivel(TQuadtree node, int lvl)
+void inNivel(TQuadtree node, int lvl, bool isErro)
 {
 	// printf("Nó de nivel %d com valor %d\n", node.key_value->nivel, node.key_value->cor);
-	if (node.key_value->erro <= 0.05 * lvl)
+
+	if (isErro ? node.key_value->erro <= 0.05 * lvl : node.key_value->nivel == lvl)
 	{
 		tPonto final;
 		final.x = node.key_value->pBase.x + node.key_value->w;
@@ -116,54 +121,14 @@ void inNivel(TQuadtree node, int lvl)
 		return;
 	}
 	if (node.childs[0] != NULL)
-		inNivel(*node.childs[0], lvl);
+		inNivel(*node.childs[0], lvl, isErro);
 
 	if (node.childs[1] != NULL)
-		inNivel(*node.childs[1], lvl);
+		inNivel(*node.childs[1], lvl, isErro);
 
 	if (node.childs[2] != NULL)
-		inNivel(*node.childs[2], lvl);
+		inNivel(*node.childs[2], lvl, isErro);
 
 	if (node.childs[3] != NULL)
-		inNivel(*node.childs[3], lvl);
+		inNivel(*node.childs[3], lvl, isErro);
 }
-
-void parseError(TQuadtree **node, int err)
-{
-	// for (int i = inicio.y; i < inicio.y + h; i++)
-	// 	for (int j = inicio.x; j < inicio.x + w; j++)
-	// 	{
-	// 		soma += image[i * iWidth + j];
-	// 	}
-
-	// int media = soma / (largura * altura)
-
-	if ((*node)->childs[0] != NULL)
-		parseError(&(*node)->childs[0], err);
-
-	if ((*node)->childs[1] != NULL)
-		parseError(&(*node)->childs[1], err);
-
-	if ((*node)->childs[2] != NULL)
-		parseError(&(*node)->childs[2], err);
-
-	if ((*node)->childs[3] != NULL)
-		parseError(&(*node)->childs[3], err);
-}
-
-// #define erroValue = 0.05;
-
-// void erroParse(TQuadtree **pai)
-// {
-// 	for (int i = 0; i < 4; i++)
-// 	{
-// 		bool b;
-// 		float v = (*pai)->key_value->cor / (*pai)->childs[i]->key_value->cor;
-// 		v--;
-// 		if (erroValue >= v)
-// 		{
-// 			b = true;
-// 			return b;
-// 		}
-// 	}
-// }
